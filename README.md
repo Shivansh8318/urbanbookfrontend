@@ -1,4 +1,4 @@
-# Invites App
+# UrbanBook
 
 A React Native application for creating and sharing event invitations. Built using pure React Native (no Expo).
 
