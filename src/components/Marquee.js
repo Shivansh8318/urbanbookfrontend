@@ -199,7 +199,7 @@ const styles = StyleSheet.create({
   },
   itemContainer: {
     height: '100%',
-    padding: 0, // Remove padding to allow the image to take the full space
+    padding: 0, 
   },
 });
 

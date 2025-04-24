@@ -13,7 +13,7 @@ const Container = ({ children, style }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#111827', // Dark gray background (gray-900)
+    backgroundColor: '#FFFFFF', // Changed from dark gray to white
   },
   inner: {
     flex: 1,

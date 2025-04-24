@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Image, Dimensions } from 'rea
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeIn, FadeInUp, FadeOut } from 'react-native-reanimated';
 import LinearGradient from 'react-native-linear-gradient';
+import MaskedView from '@react-native-masked-view/masked-view';
 
 import Marquee from '../components/Marquee';
 import EventCard from '../components/EventCard';
@@ -13,42 +14,42 @@ const AnimatedTouchableOpacity = Animated.createAnimatedComponent(TouchableOpaci
 const events = [
   {
     id: 1,
-    title: 'Birthday Party',
+    title: 'UrbanBook',
     image: require('../assets/images/1.jpg'),
   },
   {
     id: 2,
-    title: 'Wedding',
+    title: 'Seamless Scheduling',
     image: require('../assets/images/2.jpg'),
   },
   {
     id: 3,
-    title: 'Conference',
+    title: 'Video Classes',
     image: require('../assets/images/3.jpg'),
   },
   {
     id: 4,
-    title: 'Graduation',
+    title: 'Live Sync',
     image: require('../assets/images/4.jpg'),
   },
   {
     id: 5,
-    title: 'Family Reunion',
+    title: 'Homework Mastery',
     image: require('../assets/images/5.jpg'),
   },
   {
     id: 6,
-    title: 'Corporate Event',
+    title: 'Seamless Scheduling',
     image: require('../assets/images/6.jpg'),
   },
   {
     id: 7,
-    title: 'Holiday Celebration',
+    title: 'Video Classes',
     image: require('../assets/images/7.jpg'),
   },
   {
     id: 8,
-    title: 'Baby Shower',
+    title: 'Live Sync',
     image: require('../assets/images/8.jpg'),
   },
 ];
@@ -74,7 +75,7 @@ const WelcomeScreen = ({ navigation }) => {
       <View style={styles.overlay} />
 
       <LinearGradient
-        colors={['rgba(0,0,0,0.7)', 'rgba(0,0,0,0.5)', 'rgba(0,0,0,0.7)']}
+        colors={['rgba(0,0,0,0.55)', 'rgba(0,0,0,0.35)', 'rgba(0,0,0,0.55)']}
         style={StyleSheet.absoluteFill}
       >
         <SafeAreaView edges={['bottom']} style={styles.safeArea}>
@@ -96,15 +97,32 @@ const WelcomeScreen = ({ navigation }) => {
               entering={FadeInUp.springify().mass(1).damping(30).delay(500)}>
               Welcome to
             </Animated.Text>
-            <Animated.Text
-              style={styles.appTitle}
-              entering={FadeIn.duration(500).delay(500)}>
-              Learning App
-            </Animated.Text>
+            
+            <Animated.View
+              entering={FadeIn.duration(500).delay(500)}
+              style={{ marginBottom: 10 }}>
+              <MaskedView
+                maskElement={
+                  <Text style={[styles.appTitle, { backgroundColor: 'transparent' }]}>
+                    UrbanBook
+                  </Text>
+                }>
+                <LinearGradient
+                  colors={['#9333EA', '#A855F7', '#C084FC']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={{ height: 60 }}>
+                  <Text style={[styles.appTitle, { opacity: 0 }]}>
+                    UrbanBook
+                  </Text>
+                </LinearGradient>
+              </MaskedView>
+            </Animated.View>
+            
             <Animated.Text
               style={styles.description}
               entering={FadeInUp.springify().mass(1).damping(30).delay(500)}>
-              Explore a world of knowledge and connect with teachers and students.
+              Empowering education with seamless scheduling, real-time collaboration, and a universe of possibilities.
             </Animated.Text>
 
             <AnimatedTouchableOpacity
@@ -138,7 +156,7 @@ const styles = StyleSheet.create({
     top: 0,
     height: '100%',
     width: '100%',
-    backgroundColor: 'rgba(0,0,0,0.7)',
+    backgroundColor: 'rgba(0,0,0,0.55)',
   },
   safeArea: {
     flex: 1,

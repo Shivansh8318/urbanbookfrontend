@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Dimensions, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Animated, { FadeIn, FadeInUp } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeInUp, FadeOut } from 'react-native-reanimated';
 import LinearGradient from 'react-native-linear-gradient';
 
 import Marquee from '../components/Marquee';
@@ -14,12 +14,12 @@ const roles = [
   {
     id: 1,
     title: 'Student',
-    image: require('../assets/images/1.jpg'),
+    image: require('../assets/images/10.jpg'),
   },
   {
     id: 2,
     title: 'Teacher',
-    image: require('../assets/images/2.jpg'),
+    image: require('../assets/images/9.jpg'),
   }
 ];
 
@@ -27,16 +27,25 @@ const RoleSelectionScreen = ({ navigation }) => {
   const [activeIndex, setActiveIndex] = useState(0);
 
   const selectRole = (role) => {
-    // Handle role selection (currently just shows an alert with the selected role)
-    alert(`You selected: ${role}`);
-    // Navigate to next screen based on role (you can customize this)
-    // navigation.navigate('NextScreen', { role });
+    // Navigate to the AuthScreen with the selected role
+    navigation.navigate('Auth', { role });
   };
 
   return (
     <View style={styles.container}>
+      <Animated.Image
+        key={roles[activeIndex].id}
+        source={roles[activeIndex].image}
+        style={styles.backgroundImage}
+        resizeMode="cover"
+        entering={FadeIn.duration(1000)}
+        exiting={FadeOut.duration(1000)}
+      />
+
+      <View style={styles.overlay} />
+
       <LinearGradient
-        colors={['#111827', '#1f2937']}
+        colors={['rgba(17, 24, 39, 0.6)', 'rgba(31, 41, 55, 0.6)']}
         style={StyleSheet.absoluteFill}
       >
         <SafeAreaView edges={['top']} style={styles.safeArea}>
@@ -87,7 +96,7 @@ const RoleSelectionScreen = ({ navigation }) => {
               onPress={() => selectRole(roles[activeIndex]?.title)}
               style={styles.button}
               entering={FadeInUp.springify().mass(1).damping(30).delay(500)}>
-              <Text style={styles.buttonText}>Select {roles[activeIndex]?.title}</Text>
+              <Text style={styles.buttonText}>Continue as {roles[activeIndex]?.title}</Text>
             </AnimatedTouchableOpacity>
           </View>
         </SafeAreaView>
@@ -100,6 +109,21 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#111827',
+  },
+  backgroundImage: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    height: '100%',
+    width: '100%',
+  },
+  overlay: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    height: '100%',
+    width: '100%',
+    backgroundColor: 'rgba(0,0,0,0.55)',
   },
   safeArea: {
     flex: 1,
