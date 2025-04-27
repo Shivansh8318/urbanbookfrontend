@@ -47,13 +47,13 @@ const { width, height } = Dimensions.get('window');
  * @property {string} [identity_type]
  * @property {string} [identity_value]
  * @property {string} [dashboard_route]
+ * @property {boolean} [is_new_user]
  * @property {Identity[]} [identities]
  * @property {string} [timestamp]
  */
 
 const AuthScreen = ({ route, navigation }) => {
-  const { role } = route.params || { role: 'Student' };
-  
+  const { role = 'Student' } = route.params || {};
   const [loginStatus, setLoginStatus] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [userData, setUserData] = useState(null);
@@ -61,16 +61,16 @@ const AuthScreen = ({ route, navigation }) => {
 
   // Initialize OTPless module
   const otplessModule = new OtplessModule();
-  
+
   // Configure params with app ID
   const params = {
-    appId: "9DRP3BQPAKLIZYTVT2JS"
+    appId: '9DRP3BQPAKLIZYTVT2JS',
   };
 
   // Get the correct API endpoint based on role
   const getVerificationUrl = () => {
     const baseUrl = 'http://172.20.10.3:8000/api/';
-    return role.toLowerCase() === 'student' 
+    return role.toLowerCase() === 'student'
       ? `${baseUrl}student/validate-token/`
       : `${baseUrl}teacher/validate-token/`;
   };
@@ -84,27 +84,32 @@ const AuthScreen = ({ route, navigation }) => {
     try {
       const VERIFICATION_URL = getVerificationUrl();
       setVerificationStatus('Verifying with backend...');
-      
+
       const response = await fetch(VERIFICATION_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Accept': 'application/json',
+          Accept: 'application/json',
         },
         body: JSON.stringify({ token }),
       });
-      
+
       const contentType = response.headers.get('content-type');
       if (!contentType || !contentType.includes('application/json')) {
         const text = await response.text();
-        throw new Error('Server returned non-JSON response. Backend might be misconfigured.');
+        throw new Error(`Server returned non-JSON response: ${text}`);
       }
-      
+
       const result = await response.json();
-      
+
       if (result.success) {
         setVerificationStatus(`Verification successful: ${result.message}`);
-        navigation.replace(result.dashboard_route, { userData: result });
+        // Navigate instead of replace to avoid navigation errors
+        if (result.is_new_user) {
+          navigation.navigate('CompleteProfileScreen', { userData: result });
+        } else {
+          navigation.navigate(result.dashboard_route, { userData: result });
+        }
         return true;
       } else {
         setVerificationStatus(`Verification failed: ${result.message}`);
@@ -113,6 +118,7 @@ const AuthScreen = ({ route, navigation }) => {
       }
     } catch (error) {
       setVerificationStatus(`Verification error: ${error.message || 'Unknown error'}`);
+      console.error('Verification error:', error);
       Alert.alert('Verification Error', error.message || 'An error occurred during verification. Please try again.');
       return false;
     }
@@ -122,39 +128,33 @@ const AuthScreen = ({ route, navigation }) => {
     setIsLoading(true);
     setLoginStatus('');
     setVerificationStatus('');
-    
+
     try {
       if (!otplessModule) {
         setIsLoading(false);
-        const errorMsg = "OTPless module not available";
+        const errorMsg = 'OTPless module not available';
         setLoginStatus(`Error: ${errorMsg}`);
         Alert.alert('Login Failed', errorMsg);
         return;
       }
-      
+
       otplessModule.showLoginPage((response) => {
         setIsLoading(false);
-        
+
         if (response.data === null || response.data === undefined) {
-          const errorMsg = response.errorMessage || "Login failed";
+          const errorMsg = response.errorMessage || 'Login failed';
           setLoginStatus(`Error: ${errorMsg}`);
           Alert.alert('Login Failed', errorMsg);
         } else {
           setUserData(response.data);
-          
+
           if (response.data.token) {
             setVerificationStatus('Verifying token...');
             setLoginStatus('Completing authentication...');
-            
-            verifyTokenWithBackend(response.data.token)
-              .then(isVerified => {
-                if (!isVerified) {
-                  setLoginStatus('Verification failed');
-                }
-              })
-              .catch(error => {
-                setLoginStatus(`Error: ${error.message}`);
-              });
+
+            verifyTokenWithBackend(response.data.token).catch((error) => {
+              setLoginStatus(`Error: ${error.message}`);
+            });
           } else {
             setVerificationStatus('No token available for verification');
             Alert.alert('Authentication Error', 'No token received from authentication service');
@@ -171,23 +171,21 @@ const AuthScreen = ({ route, navigation }) => {
 
   const renderUserInfo = () => {
     if (!userData) return null;
-    
+
     return (
       <View style={styles.userInfoContainer}>
         <Text style={styles.userInfoTitle}>User Information</Text>
-        
+
         {userData.token && (
           <Text style={styles.userInfoText}>
             Token: {userData.token.substring(0, 15)}...
           </Text>
         )}
-        
+
         {userData.userId && (
-          <Text style={styles.userInfoText}>
-            User ID: {userData.userId}
-          </Text>
+          <Text style={styles.userInfoText}>User ID: {userData.userId}</Text>
         )}
-        
+
         {userData.identities && userData.identities.length > 0 && (
           <>
             <Text style={styles.sectionTitle}>Identity</Text>
@@ -198,18 +196,14 @@ const AuthScreen = ({ route, navigation }) => {
               Value: {userData.identities[0].identityValue}
             </Text>
             {userData.identities[0].name && (
-              <Text style={styles.userInfoText}>
-                Name: {userData.identities[0].name}
-              </Text>
+              <Text style={styles.userInfoText}>Name: {userData.identities[0].name}</Text>
             )}
           </>
         )}
-        
+
         {verificationStatus && (
           <View style={styles.verificationStatusContainer}>
-            <Text style={styles.verificationStatusText}>
-              {verificationStatus}
-            </Text>
+            <Text style={styles.verificationStatusText}>{verificationStatus}</Text>
           </View>
         )}
       </View>
@@ -218,37 +212,20 @@ const AuthScreen = ({ route, navigation }) => {
 
   return (
     <View style={styles.container}>
-      <LinearGradient
-        colors={['#FFFFFF', '#F9FAFB']}
-        style={StyleSheet.absoluteFill}
-      >
+      <LinearGradient colors={['#FFFFFF', '#F9FAFB']} style={StyleSheet.absoluteFill}>
         <SafeAreaView style={styles.safeArea}>
-          <ScrollView 
-            showsVerticalScrollIndicator={false} 
-            contentContainerStyle={styles.scrollContent}
-          >
+          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
             <View style={styles.header}>
-              <TouchableOpacity 
-                style={styles.backButton} 
-                onPress={() => navigation.goBack()}
-              >
+              <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
                 <Text style={styles.backButtonText}>← Back</Text>
               </TouchableOpacity>
-              <Animated.Text 
-                style={styles.title}
-                entering={FadeIn.delay(100).duration(500)}
-              >
+              <Animated.Text style={styles.title} entering={FadeIn.delay(100).duration(500)}>
                 {`${role} Sign In`}
               </Animated.Text>
             </View>
 
-            <Animated.View
-              style={styles.authContainer}
-              entering={FadeInUp.delay(200).duration(500)}
-            >
-              <Text style={styles.subtitle}>
-                Sign in to access your {role.toLowerCase()} dashboard
-              </Text>
+            <Animated.View style={styles.authContainer} entering={FadeInUp.delay(200).duration(500)}>
+              <Text style={styles.subtitle}>Sign in to access your {role.toLowerCase()} dashboard</Text>
 
               {isLoading ? (
                 <View style={styles.loadingContainer}>
@@ -257,22 +234,21 @@ const AuthScreen = ({ route, navigation }) => {
                 </View>
               ) : (
                 <>
-                  <TouchableOpacity
-                    style={styles.loginButton}
-                    onPress={handleLogin}
-                  >
+                  <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
                     <Text style={styles.loginButtonText}>Login with OTPless</Text>
                   </TouchableOpacity>
-                
+
                   {loginStatus && (
-                    <View style={[
-                      styles.statusContainer,
-                      loginStatus.includes('Error') ? styles.errorStatus : styles.successStatus
-                    ]}>
+                    <View
+                      style={[
+                        styles.statusContainer,
+                        loginStatus.includes('Error') ? styles.errorStatus : styles.successStatus,
+                      ]}
+                    >
                       <Text style={styles.statusText}>{loginStatus}</Text>
                     </View>
                   )}
-                
+
                   {renderUserInfo()}
                 </>
               )}
